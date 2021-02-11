@@ -3,6 +3,7 @@ from splinter import Browser
 from bs4 import BeautifulSoup as soup
 import pandas as pd
 import datetime as dt
+import time
 
 
 def scrape_all():
@@ -17,7 +18,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemispheres": hemisphere_image_urls(browser)
     }
 
     # Stop webdriver and return data
@@ -94,6 +96,49 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def hemisphere_url(browser):
+    #Use browser to visit the URL 
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url)
+
+    #Scrape website for hemisphere image urls and titles
+    html_hemispheres = browser.html
+    hemisphere_soup_partial = soup(html_hemispheres, 'lxml')
+
+    #Store main url
+    main_url ="https://astrogeology.usgs.gov"
+
+    img_list = hemisphere_soup_partial.find_all('div', class_='item')
+
+    #Create list
+    hemisphere_image_urls = []
+
+    #Write code to retrieve the image urls and titles for each hemisphere.
+
+    # For Loop to retrieve the full-resolution image URL and title for each hemisphere image?
+    for img in img_list:
+        hemisphere_dict = {}
+        
+        href = img.find('a', class_='itemLink product-item')
+        link = main_url + href['href']
+        browser.visit(link)
+        
+        time.sleep(1)
+        
+        hemisphere_html_full = browser.html
+        hemisphere_soup_full = soup(hemisphere_html_full, 'lxml')
+        
+        img_title = hemisphere_soup_full.find('div', class_='content').find('h2', class_='title').text
+        hemisphere_dict['title'] = img_title
+        
+        img_url = hemisphere_soup_full.find('div', class_='downloads').find('a')['href']
+        hemisphere_dict['url_img'] = img_url
+        
+        # Append dictionary to list
+        hemisphere_image_urls.append(hemisphere_dict)
+        
+    return hemisphere_image_urls
 
 if __name__ == "__main__":
 
